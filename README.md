@@ -10,6 +10,7 @@ for my game [Carrom Karrom: Carrom Board](https://play.google.com/store/apps/det
 - https://developers.google.com/games/services/common/concepts/sign-in
 - https://docs.godotengine.org/en/3.5/tutorials/platform/android/android_plugin.html
 - https://developers.google.com/games/services/console/enabling
+- https://developers.google.com/games/services/android/signin
 
 
 ## Development
