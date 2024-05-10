@@ -14,6 +14,7 @@ func _ready():
 
 		_playservice_singleton.connect("on_first_test", self, "on_first_test")
 		_playservice_singleton.connect("on_sign_in", self, "on_sign_in")
+		_playservice_singleton.connect("on_player_info", self, "on_player_info")
 	else:
 		print("GodotGooglePlayGameServicesV2 Not found")
 	pass # Replace with function body.
@@ -38,6 +39,12 @@ func on_sign_in(authenticated: bool):
 #	Also we can check
 	var is_authenticated = _playservice_singleton.isAuthenticated()
 	print("Again check is_authenticated ", is_authenticated)
+
+
+func on_player_info(player):
+	print("got player profile")
+	var userProfile = parse_json(player)
+
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

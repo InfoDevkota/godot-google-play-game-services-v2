@@ -30,6 +30,7 @@ android {
 dependencies {
     compileOnly fileTree(dir:"godot-engine-library", include:["godot-lib.aar"])
     implementation 'com.google.android.gms:play-services-games-v2:20.0.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.12.0'
