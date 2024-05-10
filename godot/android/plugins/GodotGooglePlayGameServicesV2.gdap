@@ -1,0 +1,9 @@
+[config]
+
+name="GodotGooglePlayGameServicesV2"
+binary_type="local"
+binary="app-release.aar"
+
+[dependencies]
+
+

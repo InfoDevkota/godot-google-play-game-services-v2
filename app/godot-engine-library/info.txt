@@ -1,0 +1,8 @@
+place the godot-lib.aar here
+
+
+link: https://godotengine.org/download/3.x/linux/
+
+downloaded from: https://github.com/godotengine/godot/releases/download/3.5.3-stable/godot-lib.3.5.3.stable.release.aar
+
+mv godot-lib.3.5.3.stable.release.aar  godot-lib.aar
