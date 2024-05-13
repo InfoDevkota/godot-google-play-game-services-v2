@@ -9,6 +9,7 @@ import com.bloggernepal.godotgoogleplaygameservicesv2.models.PlayerProfile;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.AuthenticationResult;
+import com.google.android.gms.games.EventsClient;
 import com.google.android.gms.games.GamesSignInClient;
 import com.google.android.gms.games.PlayGames;
 import com.google.android.gms.games.PlayGamesSdk;
@@ -208,6 +209,16 @@ public class PlayService extends GodotPlugin {
         // for this unlock it would be better to use that unlockImmediate, thus it will
         // notify the client and show the achievement unlocked
         // for easy let it be
+    }
+
+    @UsedByGodot
+    public void send_event(String eventId, int amount) {
+        Log.i("godot", "send_event called");
+        EventsClient eventsClient = PlayGames.getEventsClient(getActivity());
+
+//        This is the fire-and-forget API
+//        https://developers.google.com/android/reference/com/google/android/gms/games/EventsClient#public-abstract-void-increment-string-eventid,-int-incrementamount
+        eventsClient.increment(eventId, amount);
     }
 
 }
