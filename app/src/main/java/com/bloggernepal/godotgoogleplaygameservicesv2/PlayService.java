@@ -1,5 +1,7 @@
 package com.bloggernepal.godotgoogleplaygameservicesv2;
 
+import static com.google.android.gms.games.leaderboard.LeaderboardVariant.TIME_SPAN_WEEKLY;
+
 import android.content.Intent;
 import android.util.Log;
 
@@ -11,9 +13,12 @@ import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.AuthenticationResult;
 import com.google.android.gms.games.EventsClient;
 import com.google.android.gms.games.GamesSignInClient;
+import com.google.android.gms.games.LeaderboardsClient;
 import com.google.android.gms.games.PlayGames;
 import com.google.android.gms.games.PlayGamesSdk;
 import com.google.android.gms.games.Player;
+import com.google.android.gms.games.leaderboard.LeaderboardScore;
+import com.google.android.gms.games.leaderboard.LeaderboardVariant;
 import com.google.gson.Gson;
 
 import org.godotengine.godot.Godot;
@@ -36,15 +41,19 @@ public class PlayService extends GodotPlugin {
     static SignalInfo MANUAL_SIGN_IN = new SignalInfo("on_manual_sign_in", Boolean.class);
     static SignalInfo OAUTH_AUTH_CODE = new SignalInfo("on_oauth_auth_code", Boolean.class, String.class);
 
-//    I would like to have just a single call back with success and fail status
+    //    I would like to have just a single call back with success and fail status
 //     let's ignore these if when we implement those Immediate ones we will have these callbacks
 //    static SignalInfo ACHIEVEMENT_SET_STEP = new SignalInfo("on_achievement_step_set", Boolean.class);
 //    static SignalInfo ACHIEVEMENT_REVELED = new SignalInfo("on_achievement_reveled", Boolean.class);
 //    static SignalInfo ACHIEVEMENT_UNLOCKED = new SignalInfo("on_achievement_unlocked", Boolean.class);
     static SignalInfo SHOW_ACHIEVEMENT = new SignalInfo("on_achievement_shown", Boolean.class);
 
+    static SignalInfo GET_LEADERBOARD_SCORE = new SignalInfo("on_leaderboard_score", Boolean.class, Integer.class);
+    static SignalInfo SHOW_LEADERBOARD = new SignalInfo("on_leaderboard_shown", Boolean.class);
+
 
     static int RC_ACHIEVEMENT_UI = 9003;
+
     public PlayService(Godot godot) {
         super(godot);
     }
@@ -68,6 +77,8 @@ public class PlayService extends GodotPlugin {
 //        pluginSignals.add(ACHIEVEMENT_REVELED);
 //        pluginSignals.add(ACHIEVEMENT_UNLOCKED);
         pluginSignals.add(SHOW_ACHIEVEMENT);
+        pluginSignals.add(GET_LEADERBOARD_SCORE);
+        pluginSignals.add(SHOW_LEADERBOARD);
         return pluginSignals;
     }
 
@@ -151,7 +162,7 @@ public class PlayService extends GodotPlugin {
         GamesSignInClient gamesSignInClient = PlayGames.getGamesSignInClient(getActivity());
         gamesSignInClient
                 .requestServerSideAccess(OAuth2WebClient, /* forceRefreshToken= */ false)
-                .addOnCompleteListener( task -> {
+                .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         String serverAuthToken = task.getResult();
                         emitSignal(OAUTH_AUTH_CODE.getName(), true, serverAuthToken);
@@ -221,4 +232,61 @@ public class PlayService extends GodotPlugin {
         eventsClient.increment(eventId, amount);
     }
 
+    @UsedByGodot
+    public void show_leaderboard(String leaderboardId) {
+        LeaderboardsClient leaderboardsClient = PlayGames.getLeaderboardsClient(getActivity());
+
+        leaderboardsClient.getLeaderboardIntent(leaderboardId).addOnCompleteListener(
+                task -> {
+                    if (task.isSuccessful()) {
+                        Intent leaderboardIntent = task.getResult();
+
+                        getActivity().startActivityForResult(leaderboardIntent, RC_ACHIEVEMENT_UI);
+                        emitSignal(SHOW_LEADERBOARD.getName(), true);
+                    }
+                }
+        );
+    }
+
+    @UsedByGodot
+    public void get_leaderboard_score(String leaderboard, int span, int collection) {
+//        Here the span and collection should be some form of enum in godot side.
+
+        LeaderboardsClient leaderboardsClient = PlayGames.getLeaderboardsClient(getActivity());
+
+//        int span_can_be = LeaderboardVariant.TIME_SPAN_DAILY; //0
+//        int span_can_be = LeaderboardVariant.TIME_SPAN_WEEKLY; //1
+//        int span_can_be = LeaderboardVariant.TIME_SPAN_ALL_TIME; //2
+
+//        int collection_can_be =  LeaderboardVariant.COLLECTION_PUBLIC; //0
+//        int collection_can_be =  LeaderboardVariant.COLLECTION_FRIENDS; //2
+
+        leaderboardsClient.loadCurrentPlayerLeaderboardScore(leaderboard, span, collection)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        LeaderboardScore leaderboardScore = task.getResult().get();
+
+                        // this looks more like for my personal use and less like a library
+                        // if all goes good, we can implement necessary for now
+                        // let's just return the raw score
+
+                        if (leaderboardScore != null) {
+                            emitSignal(GET_LEADERBOARD_SCORE.getName(), true, (int) leaderboardScore.getRawScore());
+                        }
+                        {
+                            // assuming there is no score for this time frame and collection thus send 0
+                            // and make it as success as well
+                            emitSignal(GET_LEADERBOARD_SCORE.getName(), true, 0);
+                        }
+
+                    }
+                });
+    }
+
+    @UsedByGodot
+    public void submit_score_to_leaderboard(String leaderboardId, int value) {
+        LeaderboardsClient leaderboardsClient = PlayGames.getLeaderboardsClient(getActivity());
+
+        leaderboardsClient.submitScore(leaderboardId, value);
+    }
 }
