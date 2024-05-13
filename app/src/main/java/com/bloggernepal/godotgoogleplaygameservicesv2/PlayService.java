@@ -5,6 +5,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.bloggernepal.godotgoogleplaygameservicesv2.models.PlayerProfile;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.games.AuthenticationResult;
 import com.google.android.gms.games.GamesSignInClient;
 import com.google.android.gms.games.PlayGames;
@@ -25,12 +26,12 @@ public class PlayService extends GodotPlugin {
 
     boolean authenticated = false;
     GamesSignInClient gamesSignInClient;
-
-
     //    Signals
     static SignalInfo FIRST_TEST = new SignalInfo("on_first_test", Boolean.class);
     static SignalInfo SIGN_IN = new SignalInfo("on_sign_in", Boolean.class);
     static SignalInfo PLAYER_INFO = new SignalInfo("on_player_info", String.class);
+    static SignalInfo MANUAL_SIGN_IN = new SignalInfo("on_manual_sign_in", Boolean.class);
+    static SignalInfo OAUTH_AUTH_CODE = new SignalInfo("on_oauth_auth_code", Boolean.class, String.class);
 
 
     public PlayService(Godot godot) {
@@ -50,6 +51,8 @@ public class PlayService extends GodotPlugin {
         pluginSignals.add(FIRST_TEST);
         pluginSignals.add(SIGN_IN);
         pluginSignals.add(PLAYER_INFO);
+        pluginSignals.add(MANUAL_SIGN_IN);
+        pluginSignals.add(OAUTH_AUTH_CODE);
         return pluginSignals;
     }
 
@@ -58,6 +61,24 @@ public class PlayService extends GodotPlugin {
         Log.i("godot", "First Test Called");
         emitSignal(FIRST_TEST.getName(), true);
     }
+
+    @UsedByGodot
+    public void get_profile() {
+        PlayGames.getPlayersClient(getActivity()).getCurrentPlayer().addOnCompleteListener(mTask -> {
+                    Log.i("godot", "got player");
+
+                    Player player = mTask.getResult();
+                    // There are lots of data that we can get, but for simplicity just getting these
+                    PlayerProfile playerProfile = new PlayerProfile(
+                            player.getPlayerId(),
+                            player.getDisplayName(),
+                            player.getTitle()
+                    );
+                    emitSignal(PLAYER_INFO.getName(), new Gson().toJson(playerProfile));
+                }
+        );
+    }
+
 
     @UsedByGodot
     public void initialize() {
@@ -79,19 +100,7 @@ public class PlayService extends GodotPlugin {
                 Log.i("godot", "User authenticated");
                 // Continue with Play Games Services
 
-                PlayGames.getPlayersClient(getActivity()).getCurrentPlayer().addOnCompleteListener(mTask -> {
-                            Log.i("godot", "got player");
-
-                            Player player = mTask.getResult();
-                            // There are lots of data that we can get, but for simplicity just getting these
-                            PlayerProfile playerProfile = new PlayerProfile(
-                                    player.getPlayerId(),
-                                    player.getDisplayName(),
-                                    player.getTitle()
-                                );
-                            emitSignal(PLAYER_INFO.getName(), new Gson().toJson(playerProfile));
-                        }
-                );
+                get_profile();
 
             } else {
                 Log.i("godot", "User not authenticated");
@@ -108,13 +117,38 @@ public class PlayService extends GodotPlugin {
         return authenticated;
     }
 
-    // TODO to be cont..
-//    public void manualSignIn() {
-//        gamesSignInClient.signIn().addOnCompleteListener(mTask -> {
-//            AuthenticationResult authenticationResult = mTask.getResult();
-//
-//
-//        });
-//    }
+    @UsedByGodot
+    public void manualSignIn() {
+        Log.i("godot", "manaul signup received");
+        // if not autosign is not success have a button that will allow user to sing in manually
+        gamesSignInClient.signIn().addOnCompleteListener(mTask -> {
+            Log.i("godot", "manaul signup response received");
+            AuthenticationResult authenticationResult = mTask.getResult();
+            authenticated = authenticationResult.isAuthenticated();
+
+            emitSignal(MANUAL_SIGN_IN.getName(), authenticated);
+//            Godot can use getProfile to get the profile details
+        });
+    }
+
+    @UsedByGodot
+    public void requestOAuthAuthCode(String OAuth2WebClient) {
+        GamesSignInClient gamesSignInClient = PlayGames.getGamesSignInClient(getActivity());
+        gamesSignInClient
+                .requestServerSideAccess(OAuth2WebClient, /* forceRefreshToken= */ false)
+                .addOnCompleteListener( task -> {
+                    if (task.isSuccessful()) {
+                        String serverAuthToken = task.getResult();
+                        emitSignal(OAUTH_AUTH_CODE.getName(), true, serverAuthToken);
+                        // Send authentication code to the backend game server to be
+                        // exchanged for an access token and used to verify the player
+                        // via the Play Games Services REST APIs.
+                    } else {
+                        emitSignal(OAUTH_AUTH_CODE.getName(), false, "");
+                        // Failed to retrieve authentication code.
+                    }
+                });
+
+    }
 
 }
