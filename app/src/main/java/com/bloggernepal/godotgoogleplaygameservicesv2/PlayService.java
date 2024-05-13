@@ -1,11 +1,13 @@
 package com.bloggernepal.godotgoogleplaygameservicesv2;
 
+import android.content.Intent;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
 import com.bloggernepal.godotgoogleplaygameservicesv2.models.PlayerProfile;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.games.AchievementsClient;
 import com.google.android.gms.games.AuthenticationResult;
 import com.google.android.gms.games.GamesSignInClient;
 import com.google.android.gms.games.PlayGames;
@@ -33,7 +35,15 @@ public class PlayService extends GodotPlugin {
     static SignalInfo MANUAL_SIGN_IN = new SignalInfo("on_manual_sign_in", Boolean.class);
     static SignalInfo OAUTH_AUTH_CODE = new SignalInfo("on_oauth_auth_code", Boolean.class, String.class);
 
+//    I would like to have just a single call back with success and fail status
+//     let's ignore these if when we implement those Immediate ones we will have these callbacks
+//    static SignalInfo ACHIEVEMENT_SET_STEP = new SignalInfo("on_achievement_step_set", Boolean.class);
+//    static SignalInfo ACHIEVEMENT_REVELED = new SignalInfo("on_achievement_reveled", Boolean.class);
+//    static SignalInfo ACHIEVEMENT_UNLOCKED = new SignalInfo("on_achievement_unlocked", Boolean.class);
+    static SignalInfo SHOW_ACHIEVEMENT = new SignalInfo("on_achievement_shown", Boolean.class);
 
+
+    static int RC_ACHIEVEMENT_UI = 9003;
     public PlayService(Godot godot) {
         super(godot);
     }
@@ -53,6 +63,10 @@ public class PlayService extends GodotPlugin {
         pluginSignals.add(PLAYER_INFO);
         pluginSignals.add(MANUAL_SIGN_IN);
         pluginSignals.add(OAUTH_AUTH_CODE);
+//        pluginSignals.add(ACHIEVEMENT_SET_STEP);
+//        pluginSignals.add(ACHIEVEMENT_REVELED);
+//        pluginSignals.add(ACHIEVEMENT_UNLOCKED);
+        pluginSignals.add(SHOW_ACHIEVEMENT);
         return pluginSignals;
     }
 
@@ -149,6 +163,51 @@ public class PlayService extends GodotPlugin {
                     }
                 });
 
+    }
+
+    @UsedByGodot
+    public void achievement_set_step(String achievementID, int step) {
+        AchievementsClient achievementsClient = PlayGames.getAchievementsClient(getActivity());
+
+        // This is the fire-and-forget form of the API.
+        // https://developers.google.com/android/reference/com/google/android/gms/games/AchievementsClient#setSteps(java.lang.String,%20int)
+        achievementsClient.setSteps(achievementID, step);
+    }
+
+    @UsedByGodot
+    public void achievement_revele(String achievementID) {
+        AchievementsClient achievementsClient = PlayGames.getAchievementsClient(getActivity());
+
+        achievementsClient.reveal(achievementID);
+    }
+
+    @UsedByGodot
+    public void achievement_unlock(String achievementID) {
+        AchievementsClient achievementsClient = PlayGames.getAchievementsClient(getActivity());
+
+        achievementsClient.unlock(achievementID);
+        // for this unlock it would be better to use that unlockImmediate, thus it will
+        // notify the client and show the achievement unlocked
+        // for easy let it be
+    }
+
+    @UsedByGodot
+    public void show_achievement() {
+        AchievementsClient achievementsClient = PlayGames.getAchievementsClient(getActivity());
+
+        achievementsClient.getAchievementsIntent().addOnCompleteListener(
+                task -> {
+                    if (task.isSuccessful()) {
+                        Intent achievementIntent = task.getResult();
+
+                        getActivity().startActivityForResult(achievementIntent, RC_ACHIEVEMENT_UI);
+                        emitSignal(SHOW_ACHIEVEMENT.getName(), true);
+                    }
+                }
+        );
+        // for this unlock it would be better to use that unlockImmediate, thus it will
+        // notify the client and show the achievement unlocked
+        // for easy let it be
     }
 
 }
