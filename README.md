@@ -6,6 +6,70 @@ With this plugin you can
 
 Add Play Games services to your game to get frictionless zero-click sign-in
 
+## How to use the Library
+
+### Setup Play Game Service
+
+1. First follow this to [Set up Play Game Service](https://developers.google.com/games/services/console/enabling)
+    - Here you have to go to Play Console. If you have not already, need to make one time 25$ payment to get access to Play Console.
+    - Create Google Cloud project
+    - Choose external
+    - Configure OAuth consent Screen
+    - In Scope choose **auth/games_lite** and **auth/drive.appdata** only
+    - Add SHA1 hash of your keystore, add debug, add production + from Google as well, as most of the signing key is handled by google, the published app is signed by different key than your production one (managed by google).
+    - Let it be on testing phase
+    - To release you have to have privacy policy and homepage for the game and both of them should be on a verified domain from `Search Console` and it could took few weeks. But generally on few days. (took 3 days for me)
+
+The above details one are just for quick headstart, just read and keep in mind, but follow the above link throughly.
+> **⚠ NOTE: Just choose those two scopes.**  
+> For Play Game Service to auto login, you should choose **auth/games_lite** and **auth/drive.appdata** only.
+
+You should have the game_services_project_id by now, you can get it in the play console.
+
+### Setup Project
+1. If you have not already, install the android build tool
+2. Download the `
+GodotGooglePlayGameServicesV2-vx.x.x` zip from [release](https://github.com/InfoDevkota/godot-google-play-game-services-v2/releases)
+3. extract it and place the `GodotGooglePlayGameServicesV2-vx.x.x.aar` and `GodotGooglePlayGameServicesV2.gdap` in `android/plugins`
+4. Modify `android/build/AndroidManifest.xml` and add 
+    ```
+    <meta-data android:name="com.google.android.gms.games.APP_ID"
+                android:value="@string/game_services_project_id" />
+    ```
+    inside \<aplication> and \</aplication>
+    > **⚠ NOTE: use the variable from the string don't replace with real value here.**  
+5. create or add this in `android/build/res/values/strings.xml`
+    ```
+    <?xml version="1.0" encoding="utf-8"?>
+    <resources>
+        <string name="game_services_project_id" translatable="false"> 0000000000 </string>
+    </resources>
+
+    ```
+    > Replace 0000000000 with your game’s project id.
+6. In Godot Menu, Project -> Export... -> Select Android, Check on Use Custom Build and check on Godot Google Play Game Service v2.
+7. You can build and test the game
+
+You can refrence the [godot/](godot/) directory plugins and android build configs sample.
+
+### Some Helpful commands
+```
+# to view the logcat
+$ adb logcat
+
+# to clear the logcat
+$ adb logcat -c
+
+# to look for certain tags
+$ adb logcat -s godot
+
+# plugin registration
+$ adb logcat -s GodotPluginRegistry
+
+```
+
+
+
 ## Available APIs
 
 | Method Name | Parameters | Return Type | Description                                           |
@@ -59,3 +123,10 @@ A gdscript is included in [godot/scripts/playservice.gd](godot/scripts/playservi
 This plugin is released as it is, assuming it will provide some headstart while writing your own.
 
 But if you find the plugin usefull and want to have some additional apis, let us know through the github issue, we can implement that.
+
+## Thanks to
+While developing this plugin I took lots of refrences from plugins these people has maintained for godot.
+- [Shin-NiL](https://github.com/Shin-NiL)
+- [Constantin Gisca](https://github.com/cgisca)
+- [Randy Tan](https://github.com/oneseedfruit)
+- [Mitch](https://github.com/finepointcgi)

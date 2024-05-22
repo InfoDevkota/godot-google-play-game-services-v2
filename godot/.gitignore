@@ -1,0 +1,4 @@
+#Android build ignore
+android/build/*
+!android/build/AndroidManifest.xml
+!android/build/res/

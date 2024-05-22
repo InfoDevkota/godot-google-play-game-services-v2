@@ -2,7 +2,7 @@
 
 name="GodotGooglePlayGameServicesV2"
 binary_type="local"
-binary="app-release.aar"
+binary="GodotGooglePlayGameServicesV2-v0.0.1.aar"
 
 [dependencies]
 
