@@ -8,6 +8,8 @@ Add Play Games services to your game to get frictionless zero-click sign-in
 
 ## How to use the Library
 
+Here is a walk through video [Google Play Game Service v2 for Godot, Frictionless zero-click sign-in](https://youtu.be/y0IiEC3BHQw).
+
 ### Setup Play Game Service
 
 1. First follow this to [Set up Play Game Service](https://developers.google.com/games/services/console/enabling)
