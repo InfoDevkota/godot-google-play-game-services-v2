@@ -23,7 +23,7 @@ Add Play Games services to your game to get frictionless zero-click sign-in
 | send_event   | string, int (eventId, amount)          | -           | fire-and-forget form of the API.  |
 | show_leaderboard   | string (leaderboardId)         | -           | It shows leaderboard on top of the game, (startActivityForResult). emits `on_leaderboard_shown` signal  |
 | get_leaderboard_score   | string, int, int (leaderboardId, span, collection)         | -           | to get the score of the logined player in that leaderboard for that span of time and that collection. emits `on_leaderboard_shown` signal.   |
-|
+
 
 ### Possible values for span
 | value       | name                    |
@@ -31,14 +31,14 @@ Add Play Games services to your game to get frictionless zero-click sign-in
 | 0           | TIME_SPAN_DAILY         | 
 | 1           | TIME_SPAN_WEEKLY        | 
 | 2           | TIME_SPAN_ALL_TIME      | 
-|
+
 
 ### Possible values for collection
 | value       | name                    |
 |-------------|-------------------------|
 | 0           | COLLECTION_PUBLIC         | 
 | 3           | COLLECTION_FRIENDS        | 
-|
+
 
 ## Available Signals
 | signal | callback parameters | Description |
@@ -51,4 +51,11 @@ Add Play Games services to your game to get frictionless zero-click sign-in
 | on_achievement_shown | boolean (success) | whether shown or not |
 | on_leaderboard_score | boolean, int (success, score) | whether succeed or failed and if succeed the score, else score is zero |
 | on_leaderboard_shown | boolean (success) | whether leader board is show or not |
-|
+
+## use in godot
+A gdscript is included in [godot/scripts/playservice.gd](godot/scripts/playservice.gd) take a reference of that.
+
+## Future of the plugin
+This plugin is released as it is, assuming it will provide some headstart while writing your own.
+
+But if you find the plugin usefull and want to have some additional apis, let us know through the github issue, we can implement that.

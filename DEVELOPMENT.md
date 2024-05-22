@@ -24,3 +24,5 @@ downloaded from: https://github.com/godotengine/godot/releases/download/3.5.3-st
 
 mv godot-lib.3.5.3.stable.release.aar  godot-lib.aar
 
+## How to create an Android plugin for Godot?
+If you are interested on how it worked. I have documented the process to develop a simple plugin while exploring to create this plugin. [Creating an Android Plugin for Godot](https://timeandupdate.com/creating-an-android-plugin-for-godot/)
