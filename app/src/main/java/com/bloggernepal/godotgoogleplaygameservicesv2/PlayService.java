@@ -2,10 +2,17 @@ package com.bloggernepal.godotgoogleplaygameservicesv2;
 
 import static com.google.android.gms.games.leaderboard.LeaderboardVariant.TIME_SPAN_WEEKLY;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.bloggernepal.godotgoogleplaygameservicesv2.models.PlayerProfile;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -19,6 +26,11 @@ import com.google.android.gms.games.PlayGamesSdk;
 import com.google.android.gms.games.Player;
 import com.google.android.gms.games.leaderboard.LeaderboardScore;
 import com.google.android.gms.games.leaderboard.LeaderboardVariant;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 
 import org.godotengine.godot.Godot;
@@ -31,6 +43,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class PlayService extends GodotPlugin {
+
+    final String TAG = "godot GPGSv2";
 
     boolean authenticated = false;
     GamesSignInClient gamesSignInClient;
@@ -51,11 +65,20 @@ public class PlayService extends GodotPlugin {
     static SignalInfo GET_LEADERBOARD_SCORE = new SignalInfo("on_leaderboard_score", Boolean.class, Integer.class);
     static SignalInfo SHOW_LEADERBOARD = new SignalInfo("on_leaderboard_shown", Boolean.class);
 
+    // for FCM
+    static SignalInfo NOTIFICATION_PERMISSION = new SignalInfo("on_notification_permission", Boolean.class);
+    static SignalInfo FCM_TOKEN = new SignalInfo("on_fcm_token", Boolean.class, String.class);
+    static SignalInfo NEW_FCM_TOKEN = new SignalInfo("on_new_fcm_token", Boolean.class, String.class);
+
+
+    // end for FCM
+
 
     static int RC_ACHIEVEMENT_UI = 9003;
 
     public PlayService(Godot godot) {
         super(godot);
+        Helper.getInstance().setPlayService(this);
     }
 
     @NonNull
@@ -79,6 +102,13 @@ public class PlayService extends GodotPlugin {
         pluginSignals.add(SHOW_ACHIEVEMENT);
         pluginSignals.add(GET_LEADERBOARD_SCORE);
         pluginSignals.add(SHOW_LEADERBOARD);
+
+
+        // fcm
+        pluginSignals.add(NOTIFICATION_PERMISSION);
+        pluginSignals.add(FCM_TOKEN);
+        pluginSignals.add(NEW_FCM_TOKEN);
+        // fcm end
         return pluginSignals;
     }
 
@@ -289,4 +319,94 @@ public class PlayService extends GodotPlugin {
 
         leaderboardsClient.submitScore(leaderboardId, value);
     }
+
+
+////////////////////////////////////////////////////////////////////////////////////
+    // Contents below this is for FCM
+///////////////////////////////////////////////////////////////////////////////////
+    private final int PERMISSION_REQUEST_CODE = 1001;
+
+    @UsedByGodot
+    public void initializeFirebase(String applicationId, String apiKey, String projectId) {
+        Log.e(TAG, "Firebaseapp initialication called");
+
+        FirebaseOptions options = new FirebaseOptions.Builder()
+                .setApplicationId(applicationId)
+                .setApiKey(apiKey)
+                .setProjectId(projectId)
+                .build();
+
+        FirebaseApp.initializeApp(getActivity(), options);
+    }
+
+    @UsedByGodot
+    public void askNotificationPermission() {
+        // Access the activity from GodotPlugin
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.POST_NOTIFICATIONS)
+                    == PackageManager.PERMISSION_GRANTED) {
+                // Permission is already granted
+                // FCM SDK (and your app) can post notifications.
+                emitSignal(NOTIFICATION_PERMISSION.getName(), true);
+            } else {
+                // Permission is not granted, request it
+                ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.POST_NOTIFICATIONS}, PERMISSION_REQUEST_CODE);
+            }
+        }
+    }
+
+    @Override
+    public void onMainRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onMainRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted
+                // FCM SDK (and your app) can post notifications.
+                emitSignal(NOTIFICATION_PERMISSION.getName(), true);
+
+            } else {
+                // Permission denied
+                // Inform user that your app will not show notifications.
+                emitSignal(NOTIFICATION_PERMISSION.getName(), false);
+            }
+        }
+    }
+
+    @UsedByGodot
+    boolean has_notification_permission() {
+
+        // To check if we have notification permission
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true;
+        }
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+            return false;
+    }
+
+    @UsedByGodot
+    void get_fcm_token() {
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(new OnCompleteListener<String>() {
+                    @Override
+                    public void onComplete(@NonNull Task<String> task) {
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+                            emitSignal(FCM_TOKEN.getName(), false, "");
+                            return;
+                        }
+
+                        // Get new FCM registration token
+                        String token = task.getResult();
+                        emitSignal(FCM_TOKEN.getName(), true, token);
+                    }
+                });
+    }
+
+    protected void new_fcm_token_generated(String token) {
+        emitSignal(NEW_FCM_TOKEN.getName(), true, token);
+    }
+
 }

@@ -3,6 +3,14 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application>
+        <service
+            android:name=".FCMService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <meta-data
             android:name="org.godotengine.plugin.v1.GodotGooglePlayGameServicesV2"
             android:value="com.bloggernepal.godotgoogleplaygameservicesv2.PlayService" />

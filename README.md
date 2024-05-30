@@ -126,6 +126,9 @@ This plugin is released as it is, assuming it will provide some headstart while 
 
 But if you find the plugin usefull and want to have some additional apis, let us know through the github issue, we can implement that.
 
+## Firebase Cloud Messaging
+We would like to continue extending this plugin for our use case, We will be adding FCM. Learn more at [FCM.md](FCM.md). If all goes well, we can convert this plugin to AndroidEssentials for Godot.
+
 ## Thanks to
 While developing this plugin I took lots of refrences from plugins these people has maintained for godot.
 - [Shin-NiL](https://github.com/Shin-NiL)
