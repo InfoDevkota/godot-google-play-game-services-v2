@@ -3,9 +3,11 @@ package com.bloggernepal.godotgoogleplaygameservicesv2;
 import static com.google.android.gms.games.leaderboard.LeaderboardVariant.TIME_SPAN_WEEKLY;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -30,9 +32,11 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 
+import org.godotengine.godot.Dictionary;
 import org.godotengine.godot.Godot;
 import org.godotengine.godot.plugin.GodotPlugin;
 import org.godotengine.godot.plugin.SignalInfo;
@@ -45,6 +49,8 @@ import java.util.Set;
 public class PlayService extends GodotPlugin {
 
     final String TAG = "godot GPGSv2";
+
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     boolean authenticated = false;
     GamesSignInClient gamesSignInClient;
@@ -79,6 +85,9 @@ public class PlayService extends GodotPlugin {
     public PlayService(Godot godot) {
         super(godot);
         Helper.getInstance().setPlayService(this);
+
+        // Obtain the FirebaseAnalytics instance.
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(getActivity());
     }
 
     @NonNull
@@ -321,13 +330,14 @@ public class PlayService extends GodotPlugin {
     }
 
 
-////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////
     // Contents below this is for FCM
 ///////////////////////////////////////////////////////////////////////////////////
     private final int PERMISSION_REQUEST_CODE = 1001;
 
     @UsedByGodot
-    public void initializeFirebase(String applicationId, String apiKey, String projectId) {
+    public void initializeFirebaseManual(String applicationId, String apiKey, String projectId) {
+        // we used this when we could not figure out how to use that google-services.json
         Log.e(TAG, "Firebaseapp initialication called");
 
         FirebaseOptions options = new FirebaseOptions.Builder()
@@ -336,7 +346,23 @@ public class PlayService extends GodotPlugin {
                 .setProjectId(projectId)
                 .build();
 
-        FirebaseApp.initializeApp(getActivity(), options);
+        if (FirebaseApp.getApps(getActivity()).size() == 0) {
+            FirebaseApp.initializeApp(getActivity(), options);
+        } else {
+            Log.e("Apps", FirebaseApp.getApps(getActivity()).toString());
+        }
+    }
+
+    @UsedByGodot
+    public void initializeFirebase() {
+        Log.i(TAG, "initializing firebase");
+        if (FirebaseApp.getApps(getActivity()).size() == 0) {
+            Log.i(TAG, "initializing...");
+            FirebaseApp.initializeApp(getActivity());
+        } else {
+            Log.i(TAG, "already initialized");
+            Log.e("Apps", FirebaseApp.getApps(getActivity()).toString());
+        }
     }
 
     @UsedByGodot
@@ -383,7 +409,7 @@ public class PlayService extends GodotPlugin {
                 PackageManager.PERMISSION_GRANTED) {
             return true;
         }
-            return false;
+        return false;
     }
 
     @UsedByGodot
@@ -407,6 +433,24 @@ public class PlayService extends GodotPlugin {
 
     protected void new_fcm_token_generated(String token) {
         emitSignal(NEW_FCM_TOKEN.getName(), true, token);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    // Contents below this is for Firebase Analytics
+///////////////////////////////////////////////////////////////////////////////////
+
+    @UsedByGodot
+    public void logEvent(final String event, final Dictionary params) {
+        // Code snippet taken from /DrMoriarty/godot-firebase-analytics
+        if(params == null)
+            mFirebaseAnalytics.logEvent(event, null);
+        else {
+            Bundle bundle = new Bundle();
+            for(String key: params.get_keys()) {
+                bundle.putString(key, params.get(key).toString());
+            }
+            mFirebaseAnalytics.logEvent(event, bundle);
+        }
     }
 
 }
