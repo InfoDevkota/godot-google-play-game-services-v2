@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -126,6 +127,23 @@ public class PlayService extends GodotPlugin {
         Log.i("godot", "First Test Called");
         emitSignal(FIRST_TEST.getName(), true);
     }
+
+    @UsedByGodot
+    public void showToast(String message, String duration) {
+        Log.i("godot", "Showing Toast, Duration " + duration);
+        final int durationInt = duration.equals("short") ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG;
+
+        getActivity().runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getActivity(), message, durationInt).show();
+                    }
+                });
+    }
+    ////////////////////////////////////////////////////////////////////////////////////
+    // Contents below this is for Play Game Service
+    ///////////////////////////////////////////////////////////////////////////////////
 
     @UsedByGodot
     public void get_profile() {
@@ -332,7 +350,7 @@ public class PlayService extends GodotPlugin {
 
     ////////////////////////////////////////////////////////////////////////////////////
     // Contents below this is for FCM
-///////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////
     private final int PERMISSION_REQUEST_CODE = 1001;
 
     @UsedByGodot
